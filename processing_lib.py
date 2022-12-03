@@ -48,6 +48,19 @@ class InterneuronClassifier:
         :return: class name
         """
 
-
+        
+class Filtrator():
+    def __init__(self, lowcut, highcut, fs, order):
+        self.fs = fs
+        self.nyq = self.fs * 0.5
+        self.lowcut = lowcut / self.nyq
+        self.highcut = highcut / self.nyq
+        self.order = order
+        self.b, self.a = signal.butter(N=self.order, Wn=[self.lowcut, self.highcut], btype='bandpass')
+    
+    def butter_bandpass_filter(self, lfp):
+        filtered = signal.filtfilt(self.b, self.a, lfp)
+        return filtered 
+        
 
 
