@@ -14,15 +14,36 @@ class Filtrate_lfp():
         filtered = signal.filtfilt(self.b, self.a, lfp)
         return filtered
 
-def get_ripples_episodes_indexes(lfp, fs):
+def get_ripples_episodes_indexes(ripples_lfp, fs, threshold=4, accept_win=0.05)):
     """
-    :param lfp: сигнал lfp
+    :param lfp: сигнал lfp, отфильтрованный в риппл-диапазоне
     :param fs: частота дискретизации
-    :return:  массив начал и концов риппл событий
+    :return:  списки начал и концов риппл событий в единицах, указанных в частоте дискретизации (fs)
     """
+    
+    ripples_lfp_th = threshold * np.std(ripples_lfp)
+    ripples_abs = np.abs(signal.hilbert(ripples_lfp))
+    is_up_threshold = ripples_abs > ripples_lfp_th
+    is_up_threshold = is_up_threshold.astype(np.int32)
+    diff = np.diff(is_up_threshold)
+    diff = np.append(is_up_threshold[0], diff) 
 
-    pass
+    start_idx = np.ravel(np.argwhere(diff == 1))
+    end_idx = np.ravel(np.argwhere(diff == -1))
 
+    if end_idx[0] < start_idx[0]: 
+        start_idx.insert(0, 0)
+    
+    if start_idx[-1] > end_idx[-1]:
+        end_idx.append( len(ripples_lfp) - 1 )
+
+    accept_intervals = (end_idx - start_idx) > accept_win*fs
+    start_idx = start_idx[accept_intervals]
+    end_idx = end_idx[accept_intervals]
+
+    return start_idx, end_idx
+    
+    
 def get_theta_non_theta_epoches(theta_lfp, delta_lfp, sampling_period):
 
     """
